@@ -110,6 +110,9 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       if (component.position.y > size.y) {
         if (component.object.type == ObjectType.circle) {
           // Missed a circle - Game Over
+          // Small delay for consistency, though no explosion here usually
+          // Or maybe add a "poof" effect at bottom?
+          // For now just game over immediately or small delay
           gameOver();
         }
         component.removeFromParent();
@@ -150,8 +153,16 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     } else {
       // Hit square - Game Over
       object.removeFromParent();
-      _spawnParticles(object.position, Colors.red, 20);
-      gameOver();
+      _spawnParticles(
+        object.position,
+        Colors.red,
+        40,
+      ); // More particles for explosion
+
+      // Delay game over to show explosion
+      Future.delayed(const Duration(milliseconds: 500), () {
+        gameOver();
+      });
     }
   }
 
@@ -160,12 +171,17 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       ParticleSystemComponent(
         particle: Particle.generate(
           count: count,
-          lifespan: 0.5,
+          lifespan: 0.8, // Longer lifespan
           generator: (i) => AcceleratedParticle(
-            acceleration: Vector2(0, 200),
-            speed: Vector2.random(Random()) * 200 - Vector2(100, 100),
+            acceleration: Vector2(0, 300),
+            speed:
+                Vector2.random(Random()) * 400 -
+                Vector2(200, 200), // Faster explosion
             position: position.clone(),
-            child: CircleParticle(radius: 2, paint: Paint()..color = color),
+            child: CircleParticle(
+              radius: 3, // Larger particles
+              paint: Paint()..color = color,
+            ),
           ),
         ),
       ),

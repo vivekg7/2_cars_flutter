@@ -62,13 +62,13 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       car: leftCar,
       color: Colors.white,
       laneWidth: laneWidth,
-    )..position = Vector2(0, size.y - 100);
+    )..position = Vector2(0, size.y - 150);
 
     rightCarComponent = CarComponent(
       car: rightCar,
       color: Colors.white,
       laneWidth: laneWidth,
-    )..position = Vector2(0, size.y - 100);
+    )..position = Vector2(0, size.y - 150);
 
     add(leftCarComponent);
     add(rightCarComponent);

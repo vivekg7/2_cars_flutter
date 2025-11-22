@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'game_difficulty.dart';
 
 class ScoreEntry {
   final int score;
@@ -18,57 +19,58 @@ class ScoreEntry {
 }
 
 class ScoreService {
-  static const String _keyScores = 'scores';
+  static const String _highScoresKeyPrefix = 'high_scores_';
 
-  Future<void> saveScore(int score) async {
+  String _getKey(GameDifficulty difficulty) {
+    return '$_highScoresKeyPrefix${difficulty.name}';
+  }
+
+  Future<void> saveScore(int score, GameDifficulty difficulty) async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> scoresJson = prefs.getStringList(_keyScores) ?? [];
+    final key = _getKey(difficulty);
+    final List<String> scoresJson = prefs.getStringList(key) ?? [];
 
-    List<ScoreEntry> scores = scoresJson
-        .map((e) => ScoreEntry.fromJson(jsonDecode(e)))
+    final List<ScoreEntry> scores = scoresJson
+        .map((s) => ScoreEntry.fromJson(jsonDecode(s)))
         .toList();
 
     scores.add(ScoreEntry(score: score, date: DateTime.now()));
 
-    // Sort by score descending
+    // Sort descending
     scores.sort((a, b) => b.score.compareTo(a.score));
 
-    // Keep only top 10
+    // Keep top 10
     if (scores.length > 10) {
-      scores = scores.sublist(0, 10);
+      scores.removeRange(10, scores.length);
     }
 
-    await prefs.setStringList(
-      _keyScores,
-      scores.map((e) => jsonEncode(e.toJson())).toList(),
-    );
+    final List<String> updatedScoresJson = scores
+        .map((s) => jsonEncode(s.toJson()))
+        .toList();
+
+    await prefs.setStringList(key, updatedScoresJson);
   }
 
-  Future<List<ScoreEntry>> getTopScores() async {
+  Future<List<ScoreEntry>> getHighScores(GameDifficulty difficulty) async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> scoresJson = prefs.getStringList(_keyScores) ?? [];
+    final key = _getKey(difficulty);
+    final List<String> scoresJson = prefs.getStringList(key) ?? [];
 
-    return scoresJson.map((e) => ScoreEntry.fromJson(jsonDecode(e))).toList();
+    return scoresJson.map((s) => ScoreEntry.fromJson(jsonDecode(s))).toList();
   }
 
-  Future<int> getMonthlyHighScore() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> scoresJson = prefs.getStringList(_keyScores) ?? [];
-
+  Future<int> getMonthlyHighScore(GameDifficulty difficulty) async {
+    final scores = await getHighScores(difficulty);
     final now = DateTime.now();
-    final oneMonthAgo = now.subtract(const Duration(days: 30));
 
-    int maxScore = 0;
-
-    for (var jsonStr in scoresJson) {
-      final entry = ScoreEntry.fromJson(jsonDecode(jsonStr));
-      if (entry.date.isAfter(oneMonthAgo)) {
-        if (entry.score > maxScore) {
-          maxScore = entry.score;
+    int monthlyHigh = 0;
+    for (var entry in scores) {
+      if (entry.date.year == now.year && entry.date.month == now.month) {
+        if (entry.score > monthlyHigh) {
+          monthlyHigh = entry.score;
         }
       }
     }
-
-    return maxScore;
+    return monthlyHigh;
   }
 }

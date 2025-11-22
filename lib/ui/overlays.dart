@@ -3,6 +3,7 @@ import '../models/game_state.dart';
 import '../models/score_service.dart';
 import 'package:intl/intl.dart';
 import 'game_shapes.dart';
+import '../models/game_difficulty.dart';
 
 class GameOverlays extends StatefulWidget {
   final GameState gameState;
@@ -60,7 +61,9 @@ class _GameOverlaysState extends State<GameOverlays> {
               letterSpacing: 4,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
+          _buildDifficultySelector(),
+          const SizedBox(height: 30),
           ElevatedButton(
             onPressed: widget.onStart,
             style: ElevatedButton.styleFrom(
@@ -101,6 +104,33 @@ class _GameOverlaysState extends State<GameOverlays> {
     );
   }
 
+  Widget _buildDifficultySelector() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: GameDifficulty.values.map((difficulty) {
+        final isSelected = widget.gameState.currentDifficulty == difficulty;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: ChoiceChip(
+            label: Text(difficulty.displayName),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) {
+                widget.gameState.setDifficulty(difficulty);
+              }
+            },
+            selectedColor: Colors.white,
+            backgroundColor: Colors.black,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.black : Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildPauseOverlay(BuildContext context) {
     return Center(
       child: Column(
@@ -134,7 +164,7 @@ class _GameOverlaysState extends State<GameOverlays> {
 
   Widget _buildInstructionsOverlay(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.85),
+      color: Colors.black.withValues(alpha: 0.85),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -230,91 +260,100 @@ class _GameOverlaysState extends State<GameOverlays> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'HIGH SCORES',
-              style: TextStyle(
-                fontSize: 40,
+            Text(
+              'HIGH SCORES (${widget.gameState.currentDifficulty.displayName})',
+              style: const TextStyle(
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 3,
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             Flexible(
-              child: FutureBuilder<List<dynamic>>(
-                future: Future.wait([
-                  ScoreService().getTopScores(),
-                  ScoreService().getMonthlyHighScore(),
-                ]),
+              child: FutureBuilder<List<ScoreEntry>>(
+                future: ScoreService().getHighScores(
+                  widget.gameState.currentDifficulty,
+                ),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return const CircularProgressIndicator(color: Colors.white);
+                    return const CircularProgressIndicator();
                   }
-
-                  final topScores = snapshot.data![0] as List<ScoreEntry>;
-                  final monthlyHigh = snapshot.data![1] as int;
-
+                  final scores = snapshot.data!;
+                  if (scores.isEmpty) {
+                    return const Text(
+                      'No scores yet',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    );
+                  }
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
                     constraints: const BoxConstraints(
                       maxWidth: 400,
                       maxHeight: 400,
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Monthly Best: $monthlyHigh',
-                          style: const TextStyle(
-                            color: Colors.yellow,
-                            fontSize: 18,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: scores.length,
+                      itemBuilder: (context, index) {
+                        final e = scores[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4.0,
+                            horizontal: 20,
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        Expanded(
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: topScores.length,
-                            itemBuilder: (context, index) {
-                              final entry = topScores[index];
-                              final dateStr = DateFormat(
-                                'MMM d, HH:mm',
-                              ).format(entry.date);
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${index + 1}. ${DateFormat('MMM d, HH:mm').format(e.date)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${index + 1}. $dateStr',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${entry.score}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                              ),
+                              Text(
+                                '${e.score}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+            const Text(
+              'MONTHLY BEST',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.yellow,
+              ),
+            ),
+            const SizedBox(height: 10),
+            FutureBuilder<int>(
+              future: ScoreService().getMonthlyHighScore(
+                widget.gameState.currentDifficulty,
+              ),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox.shrink();
+                return Text(
+                  '${snapshot.data}',
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -324,12 +363,14 @@ class _GameOverlaysState extends State<GameOverlays> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 30,
-                  vertical: 10,
+                  vertical: 12,
                 ),
                 backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
               ),
-              child: const Text('BACK'),
+              child: const Text(
+                'BACK',
+                style: TextStyle(fontSize: 20, color: Colors.black),
+              ),
             ),
           ],
         ),
@@ -363,14 +404,15 @@ class _GameOverlaysState extends State<GameOverlays> {
               ),
             ),
             const SizedBox(height: 30),
-            // We can reuse the high scores view logic here or keep it simple
-            // Let's keep it simple as before but maybe just top 3?
-            // Or just the same list.
             Flexible(
               child: FutureBuilder<List<dynamic>>(
                 future: Future.wait([
-                  ScoreService().getTopScores(),
-                  ScoreService().getMonthlyHighScore(),
+                  ScoreService().getHighScores(
+                    widget.gameState.currentDifficulty,
+                  ),
+                  ScoreService().getMonthlyHighScore(
+                    widget.gameState.currentDifficulty,
+                  ),
                 ]),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -389,7 +431,7 @@ class _GameOverlaysState extends State<GameOverlays> {
                     child: Column(
                       children: [
                         Text(
-                          'Monthly Best: $monthlyHigh',
+                          'Monthly Best (${widget.gameState.currentDifficulty.displayName}): $monthlyHigh',
                           style: const TextStyle(
                             color: Colors.yellow,
                             fontSize: 18,
@@ -410,7 +452,7 @@ class _GameOverlaysState extends State<GameOverlays> {
                             shrinkWrap: true,
                             itemCount: topScores.length > 5
                                 ? 5
-                                : topScores.length, // Show top 5 on game over
+                                : topScores.length,
                             itemBuilder: (context, index) {
                               final entry = topScores[index];
                               final dateStr = DateFormat(

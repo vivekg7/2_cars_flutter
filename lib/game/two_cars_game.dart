@@ -19,10 +19,12 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   late Car rightCar;
   late CarComponent leftCarComponent;
   late CarComponent rightCarComponent;
-
-  final Random _random = Random();
+  double _currentSpeed = 300;
   double _timeSinceLastSpawn = 0;
-  final double _spawnInterval = 1.0; // Seconds
+  double _distanceLeft = 0;
+  double _distanceRight = 0;
+  double _spawnInterval = 1.0; // Seconds
+  final Random _random = Random();
 
   TwoCarsGame({required this.gameState, required this.onGameOver});
 
@@ -31,10 +33,12 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
   @override
   Future<void> onLoad() async {
+    await super.onLoad();
+
     // Calculate dimensions
     final laneWidth = size.x / 4;
 
-    // Add Backgrounds
+    // Add Lane Backgrounds
     add(
       LaneBackground(
         color: const Color(0xFFE74C3C),
@@ -51,14 +55,14 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     );
 
     // Initialize Cars
-    leftCar = Car(side: CarSide.left);
-    rightCar = Car(side: CarSide.right);
+    leftCar = Car(side: CarSide.left, laneIndex: 0);
+    rightCar = Car(side: CarSide.right, laneIndex: 3);
 
     leftCarComponent = CarComponent(
       car: leftCar,
       color: Colors.white,
       laneWidth: laneWidth,
-    )..position = Vector2(0, size.y - 100); // Initial Y, X set by component
+    )..position = Vector2(0, size.y - 100);
 
     rightCarComponent = CarComponent(
       car: rightCar,
@@ -90,56 +94,113 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
     if (gameState.status != GameStatus.playing) return;
 
-    // Spawning Logic
-    _timeSinceLastSpawn += dt;
-    // Decrease interval as difficulty increases
-    double currentInterval = _spawnInterval / gameState.difficultyMultiplier;
-    if (currentInterval < 0.4) currentInterval = 0.4; // Cap max spawn rate
-
-    if (_timeSinceLastSpawn >= currentInterval) {
-      _spawnObject();
-      _timeSinceLastSpawn = 0;
+    // Update speed based on difficulty
+    final difficulty = gameState.currentDifficulty;
+    if (_currentSpeed < difficulty.maxSpeed) {
+      _currentSpeed += 5 * dt;
     }
 
-    // Move Objects
-    double speed = 300 * gameState.difficultyMultiplier; // Pixels per second
-    for (var component in children.whereType<FallingObjectComponent>()) {
-      component.position.y += speed * dt;
+    // Spawning Logic
+    if (difficulty.useFixedSpacing) {
+      // Fixed Distance Spawning (Medium/Hard) - Per Side
+      _distanceLeft += _currentSpeed * dt;
+      _distanceRight += _currentSpeed * dt;
 
-      // Check for missed circles (passed bottom of screen)
-      if (component.position.y > size.y) {
-        if (component.object.type == ObjectType.circle) {
-          // Missed a circle - Game Over
-          // Small delay for consistency, though no explosion here usually
-          // Or maybe add a "poof" effect at bottom?
-          // For now just game over immediately or small delay
-          gameOver();
+      if (_distanceLeft >= difficulty.spawnDistance) {
+        _spawnFallingObject(forceSide: CarSide.left);
+        _distanceLeft = 0;
+      }
+
+      if (_distanceRight >= difficulty.spawnDistance) {
+        _spawnFallingObject(forceSide: CarSide.right);
+        _distanceRight = 0;
+      }
+    } else {
+      // Random Time Spawning (Easy) - Global
+      _timeSinceLastSpawn += dt;
+      if (_timeSinceLastSpawn >= _spawnInterval) {
+        _spawnFallingObject();
+        _timeSinceLastSpawn = 0;
+        // Randomize next interval between 0.8 and 1.5 seconds
+        _spawnInterval = 0.8 + _random.nextDouble() * 0.7;
+      }
+    }
+
+    // Move objects
+    for (final child in children) {
+      if (child is FallingObjectComponent) {
+        child.position.y += _currentSpeed * dt;
+
+        // Check if object missed (passed bottom)
+        if (child.position.y > size.y + 50) {
+          if (child.object.type == ObjectType.circle && !child.isRemoved) {
+            // Missed a circle -> Game Over
+            gameOver();
+          }
+          child.removeFromParent();
         }
-        component.removeFromParent();
       }
     }
   }
 
-  void _spawnObject() {
+  void startGame() {
+    gameState.setStatus(GameStatus.playing);
+    gameState.score = 0;
+
+    // Set initial speed based on difficulty
+    _currentSpeed = gameState.currentDifficulty.initialSpeed;
+
+    _timeSinceLastSpawn = 0;
+    _distanceLeft = 0;
+    _distanceRight = 0;
+    _spawnInterval = 1.0;
+
+    // Clear existing objects
+    children.whereType<FallingObjectComponent>().forEach(
+      (c) => c.removeFromParent(),
+    );
+    children.whereType<ParticleSystemComponent>().forEach(
+      (c) => c.removeFromParent(),
+    );
+
+    resumeEngine();
+  }
+
+  void _spawnFallingObject({CarSide? forceSide}) {
     final laneWidth = size.x / 4;
 
-    // Randomize side and lane
-    final side = _random.nextBool() ? CarSide.left : CarSide.right;
-    final laneIndex = _random.nextBool() ? 0 : 1;
-    final type = _random.nextBool() ? ObjectType.circle : ObjectType.square;
+    // Determine Side
+    CarSide side;
+    if (forceSide != null) {
+      side = forceSide;
+    } else {
+      side = _random.nextBool() ? CarSide.left : CarSide.right;
+    }
 
-    // Check overlap (simple check: don't spawn if something was just spawned there?
-    // actually we just spawn based on timer, so overlap is rare unless very fast.
-    // We can add a check if we want strict non-overlap)
+    // Determine Lane (0 or 1 for left, 2 or 3 for right)
+    int laneIndex;
+    if (side == CarSide.left) {
+      laneIndex = _random.nextBool() ? 0 : 1;
+    } else {
+      laneIndex = _random.nextBool() ? 2 : 3;
+    }
 
-    final obj = FallingObject(
-      id: '', // Not needed for Flame
+    // Determine Type (Circle or Square)
+    ObjectType type = _random.nextBool()
+        ? ObjectType.circle
+        : ObjectType.square;
+
+    final object = FallingObject(
+      id:
+          DateTime.now().millisecondsSinceEpoch.toString() +
+          _random.nextInt(1000).toString(),
       type: type,
       side: side,
       laneIndex: laneIndex,
+      verticalPosition: -0.1,
     );
 
-    add(FallingObjectComponent(object: obj, laneWidth: laneWidth));
+    add(FallingObjectComponent(object: object, laneWidth: laneWidth));
   }
 
   void handleCollision(CarComponent car, FallingObjectComponent object) {

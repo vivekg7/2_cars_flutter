@@ -83,16 +83,21 @@ class _GamePageState extends State<GamePage> {
 
           // Overlays
           if (_gameState.status != GameStatus.playing)
-            GameOverlays(
-              gameState: _gameState,
-              onStart: () {
-                _game.resetGame();
-                setState(() {});
-              },
-              onResume: () {
-                _game.resumeEngine();
-                _gameState.resumeGame();
-                setState(() {});
+            AnimatedBuilder(
+              animation: _gameState,
+              builder: (context, child) {
+                return GameOverlays(
+                  gameState: _gameState,
+                  onStart: () {
+                    _game.resetGame();
+                    setState(() {});
+                  },
+                  onResume: () {
+                    _game.resumeEngine();
+                    _gameState.resumeGame();
+                    setState(() {});
+                  },
+                );
               },
             ),
 

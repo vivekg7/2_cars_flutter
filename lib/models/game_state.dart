@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'score_service.dart';
+import 'game_difficulty.dart';
 
-enum GameStatus { playing, paused, gameOver, initial }
+enum GameStatus { initial, playing, paused, gameOver }
 
 class GameState extends ChangeNotifier {
   int score = 0;
-  int highScore = 0;
   GameStatus status = GameStatus.initial;
-  double difficultyMultiplier = 1.0;
+  int difficultyLevel = 1;
+  int monthlyHighScore = 0;
+  GameDifficulty currentDifficulty = GameDifficulty.easy;
+
   final ScoreService _scoreService = ScoreService();
 
   GameState() {
@@ -15,19 +18,39 @@ class GameState extends ChangeNotifier {
   }
 
   Future<void> _loadHighScore() async {
-    // For now, let's just show the all-time high score as the "highScore" in the UI
-    // Or we can show monthly. Let's show all-time top score.
-    final scores = await _scoreService.getTopScores();
-    if (scores.isNotEmpty) {
-      highScore = scores.first.score;
-      notifyListeners();
-    }
+    monthlyHighScore = await _scoreService.getMonthlyHighScore(
+      currentDifficulty,
+    );
+    notifyListeners();
+  }
+
+  void setDifficulty(GameDifficulty difficulty) {
+    currentDifficulty = difficulty;
+    _loadHighScore(); // Reload high score for new difficulty
+    notifyListeners();
+  }
+
+  void updateScore(int newScore) {
+    score = newScore;
+    // Simple difficulty scaling based on score for visual feedback if needed
+    difficultyLevel = (score / 10).floor() + 1;
+    notifyListeners();
+  }
+
+  void setStatus(GameStatus newStatus) {
+    status = newStatus;
+    notifyListeners();
   }
 
   void reset() {
     score = 0;
+    difficultyLevel = 1;
     status = GameStatus.initial;
-    difficultyMultiplier = 1.0;
+    notifyListeners();
+  }
+
+  void resumeGame() {
+    status = GameStatus.playing;
     notifyListeners();
   }
 
@@ -41,33 +64,15 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void resumeGame() {
-    status = GameStatus.playing;
-    notifyListeners();
-  }
-
   Future<void> endGame() async {
     status = GameStatus.gameOver;
-    if (score > highScore) {
-      highScore = score;
-    }
-    await _scoreService.saveScore(score);
+    await _scoreService.saveScore(score, currentDifficulty);
+    await _loadHighScore(); // Refresh high score
     notifyListeners();
   }
 
   void incrementScore() {
     score++;
-    // Increase difficulty every 10 points
-    // Base is 1.0. Every 10 points, add 0.1 (10% speed increase).
-    // Example: Score 0-9 -> 1.0x
-    //          Score 10-19 -> 1.1x
-    //          Score 20-29 -> 1.2x
-    difficultyMultiplier = 1.0 + (score ~/ 10) * 0.1;
-
-    // Cap at 2.5x speed
-    if (difficultyMultiplier > 2.5) {
-      difficultyMultiplier = 2.5;
-    }
     notifyListeners();
   }
 }

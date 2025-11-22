@@ -1,0 +1,26 @@
+# 2 Cars Flutter Game Development
+
+- [x] Project Setup <!-- id: 0 -->
+    - [x] Verify/Create Flutter project structure <!-- id: 1 -->
+    - [x] Add necessary dependencies (e.g., `flame` or just standard Flutter) <!-- id: 2 -->
+- [x] Game Logic Implementation <!-- id: 3 -->
+    - [x] Define Game State (Score, Status, Difficulty) <!-- id: 4 -->
+    - [x] Implement Car Logic (Lane switching, Position) <!-- id: 5 -->
+    - [x] Implement Object Spawning Logic (Circles/Squares, Lanes, Speed) <!-- id: 6 -->
+    - [x] Implement Collision Detection <!-- id: 7 -->
+    - [x] Implement Difficulty Manager <!-- id: 8 -->
+- [x] UI Implementation <!-- id: 9 -->
+    - [x] Main Game Screen (Split view, Lanes) <!-- id: 10 -->
+    - [x] Car Rendering & Animations <!-- id: 11 -->
+    - [x] Falling Objects Rendering <!-- id: 12 -->
+    - [x] Score Display <!-- id: 13 -->
+    - [x] Start / Pause / Game Over Screens <!-- id: 14 -->
+- [x] Verification & Polish <!-- id: 15 -->
+    - [x] Manual Gameplay Testing <!-- id: 16 -->
+    - [x] UI Polish (Colors, Fonts, Animations) <!-- id: 17 -->
+- [x] Flame Migration <!-- id: 18 -->
+    - [x] Add Flame Dependency <!-- id: 19 -->
+    - [x] Create FlameGame Class <!-- id: 20 -->
+    - [x] Create Car and Object Components <!-- id: 21 -->
+    - [x] Implement Game Loop & Collision <!-- id: 22 -->
+    - [x] Integrate with Flutter UI (Overlays) <!-- id: 23 -->

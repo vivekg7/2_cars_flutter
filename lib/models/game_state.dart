@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'score_service.dart';
 
 enum GameStatus { playing, paused, gameOver, initial }
 
@@ -7,6 +8,21 @@ class GameState extends ChangeNotifier {
   int highScore = 0;
   GameStatus status = GameStatus.initial;
   double difficultyMultiplier = 1.0;
+  final ScoreService _scoreService = ScoreService();
+
+  GameState() {
+    _loadHighScore();
+  }
+
+  Future<void> _loadHighScore() async {
+    // For now, let's just show the all-time high score as the "highScore" in the UI
+    // Or we can show monthly. Let's show all-time top score.
+    final scores = await _scoreService.getTopScores();
+    if (scores.isNotEmpty) {
+      highScore = scores.first.score;
+      notifyListeners();
+    }
+  }
 
   void reset() {
     score = 0;
@@ -30,11 +46,12 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void endGame() {
+  Future<void> endGame() async {
     status = GameStatus.gameOver;
     if (score > highScore) {
       highScore = score;
     }
+    await _scoreService.saveScore(score);
     notifyListeners();
   }
 

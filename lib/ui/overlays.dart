@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/game_state.dart';
+import '../models/score_service.dart';
 
 class GameOverlays extends StatelessWidget {
   final GameState gameState;
@@ -31,17 +33,142 @@ class GameOverlays extends StatelessWidget {
           onPressed: onResume,
         );
       case GameStatus.gameOver:
-        return _buildOverlay(
-          context,
-          title: 'GAME OVER',
-          subtitle:
-              'Score: ${gameState.score}\nHigh Score: ${gameState.highScore}',
-          buttonText: 'RETRY',
-          onPressed: onStart,
-        );
+        return _buildGameOverOverlay(context);
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildGameOverOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'GAME OVER',
+              style: TextStyle(
+                fontSize: 50,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Score: ${gameState.score}',
+              style: const TextStyle(
+                fontSize: 32,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 30),
+            Flexible(
+              child: FutureBuilder<List<dynamic>>(
+                future: Future.wait([
+                  ScoreService().getTopScores(),
+                  ScoreService().getMonthlyHighScore(),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator(color: Colors.white);
+                  }
+
+                  final topScores = snapshot.data![0] as List<ScoreEntry>;
+                  final monthlyHigh = snapshot.data![1] as int;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    constraints: const BoxConstraints(
+                      maxWidth: 400,
+                      maxHeight: 300,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Monthly Best: $monthlyHigh',
+                          style: const TextStyle(
+                            color: Colors.yellow,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Top 10 Scores',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: topScores.length,
+                            itemBuilder: (context, index) {
+                              final entry = topScores[index];
+                              final dateStr = DateFormat(
+                                'MMM d, HH:mm',
+                              ).format(entry.date);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${index + 1}. $dateStr',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${entry.score}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: onStart,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 50,
+                  vertical: 15,
+                ),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                textStyle: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              child: const Text('RETRY'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildOverlay(

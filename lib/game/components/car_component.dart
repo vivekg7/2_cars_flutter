@@ -74,20 +74,44 @@ class CarComponent extends PositionComponent with CollisionCallbacks {
         ? Colors.blue.withOpacity(0.6)
         : Colors.grey.withOpacity(0.6);
 
-    // Position at bottom center of car
-    // Car anchor is center, so position is center.
-    // Bottom center is position.x, position.y + size.y/2
-    final particlePos = position.clone() + Vector2(0, size.y / 2);
+    // Dual exhaust positions
+    // Car width is size.x (50). Center is 0.
+    // Left exhaust: -15 from center
+    // Right exhaust: +15 from center
+    // Bottom Y: size.y / 2
 
+    final leftExhaustPos = position.clone() + Vector2(-15, size.y / 2);
+    final rightExhaustPos = position.clone() + Vector2(15, size.y / 2);
+
+    // Spawn for left exhaust
     game.add(
       ParticleSystemComponent(
         particle: AcceleratedParticle(
-          acceleration: Vector2(0, 100), // Moving down
+          acceleration: Vector2(0, 100),
           speed: Vector2(
-            random.nextDouble() * 20 - 10,
+            random.nextDouble() * 10 - 5,
             100 + random.nextDouble() * 50,
           ),
-          position: particlePos,
+          position: leftExhaustPos,
+          child: CircleParticle(
+            radius: random.nextDouble() * 2 + 1,
+            paint: Paint()..color = color,
+            lifespan: 0.5,
+          ),
+        ),
+      ),
+    );
+
+    // Spawn for right exhaust
+    game.add(
+      ParticleSystemComponent(
+        particle: AcceleratedParticle(
+          acceleration: Vector2(0, 100),
+          speed: Vector2(
+            random.nextDouble() * 10 - 5,
+            100 + random.nextDouble() * 50,
+          ),
+          position: rightExhaustPos,
           child: CircleParticle(
             radius: random.nextDouble() * 2 + 1,
             paint: Paint()..color = color,

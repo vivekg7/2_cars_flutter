@@ -47,7 +47,7 @@ enum GameDifficulty {
       case GameDifficulty.medium:
         return 350.0;
       case GameDifficulty.hard:
-        return 350.0;
+        return 250.0;
     }
   }
 }

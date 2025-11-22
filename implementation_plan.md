@@ -123,3 +123,15 @@ UI widgets (`CarWidget`, `FallingObjectWidget`) will be replaced by Flame `Compo
         - Update `android/app/build.gradle.kts` to load keystore info.
     - **Build**:
         - Run `flutter build appbundle`.
+
+## Game Instructions
+- **Goal**: Explain game rules to the player.
+- **Implementation**:
+    - **UI**:
+        - Add a "How to Play" button to the Start Screen (below High Scores).
+        - Create a simple overlay/dialog showing:
+            - "Tap Left/Right to switch lanes"
+            - "Collect Circles (Yellow)"
+            - "Avoid Squares (Red)"
+            - "Don't miss any Circles!"
+    - **Assets**: Use icons or simple text.

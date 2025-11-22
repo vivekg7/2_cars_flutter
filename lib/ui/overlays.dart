@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/game_state.dart';
 import '../models/score_service.dart';
+import 'package:intl/intl.dart';
+import 'game_shapes.dart';
 
 class GameOverlays extends StatefulWidget {
   final GameState gameState;
@@ -21,6 +22,7 @@ class GameOverlays extends StatefulWidget {
 
 class _GameOverlaysState extends State<GameOverlays> {
   bool _showHighScores = false;
+  bool _showInstructions = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,27 +30,197 @@ class _GameOverlaysState extends State<GameOverlays> {
       return _buildHighScoresOverlay(context);
     }
 
+    if (_showInstructions) {
+      return _buildInstructionsOverlay(context);
+    }
+
     switch (widget.gameState.status) {
       case GameStatus.initial:
-        return _buildOverlay(
-          context,
-          title: '2 CARS',
-          buttonText: 'PLAY',
-          onPressed: widget.onStart,
-          showHighScoresButton: true,
-        );
+        return _buildStartOverlay(context);
+      case GameStatus.playing:
+        return const SizedBox.shrink();
       case GameStatus.paused:
-        return _buildOverlay(
-          context,
-          title: 'PAUSED',
-          buttonText: 'RESUME',
-          onPressed: widget.onResume,
-        );
+        return _buildPauseOverlay(context);
       case GameStatus.gameOver:
         return _buildGameOverOverlay(context);
-      default:
-        return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildStartOverlay(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '2 CARS',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 4,
+            ),
+          ),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: widget.onStart,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              backgroundColor: Colors.white,
+            ),
+            child: const Text(
+              'PLAY',
+              style: TextStyle(fontSize: 24, color: Colors.black),
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _showHighScores = true;
+              });
+            },
+            child: const Text(
+              'HIGH SCORES',
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _showInstructions = true;
+              });
+            },
+            child: const Text(
+              'HOW TO PLAY',
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPauseOverlay(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'PAUSED',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 4,
+            ),
+          ),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: widget.onResume,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              backgroundColor: Colors.white,
+            ),
+            child: const Text(
+              'RESUME',
+              style: TextStyle(fontSize: 24, color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstructionsOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'HOW TO PLAY',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 30),
+              _buildInstructionItem(
+                icon: Icons.touch_app,
+                text: 'Tap Left/Right to switch lanes',
+                color: Colors.white,
+              ),
+              const SizedBox(height: 15),
+              _buildInstructionItem(
+                shapeType: GameShapeType.circle,
+                text: 'Collect Circles',
+              ),
+              const SizedBox(height: 15),
+              _buildInstructionItem(
+                shapeType: GameShapeType.square,
+                text: 'Avoid Squares',
+              ),
+              const SizedBox(height: 15),
+              _buildInstructionItem(
+                icon: Icons.warning_amber_rounded,
+                text: "Don't miss any Circles!",
+                color: Colors.orange,
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _showInstructions = false;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 12,
+                  ),
+                  backgroundColor: Colors.white,
+                ),
+                child: const Text(
+                  'BACK',
+                  style: TextStyle(fontSize: 20, color: Colors.black),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInstructionItem({
+    IconData? icon,
+    GameShapeType? shapeType,
+    required String text,
+    Color? color,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (shapeType != null)
+          GameShapeWidget(type: shapeType, size: 30)
+        else
+          Icon(icon, color: color, size: 30),
+        const SizedBox(width: 15),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildHighScoresOverlay(BuildContext context) {
@@ -296,78 +468,6 @@ class _GameOverlaysState extends State<GameOverlays> {
               ),
               child: const Text('RETRY'),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOverlay(
-    BuildContext context, {
-    required String title,
-    String? subtitle,
-    required String buttonText,
-    required VoidCallback onPressed,
-    bool showHighScoresButton = false,
-  }) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.7),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 50,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 5,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 20),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 24, color: Colors.white),
-              ),
-            ],
-            const SizedBox(height: 50),
-            ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 50,
-                  vertical: 15,
-                ),
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                textStyle: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Text(buttonText),
-            ),
-            if (showHighScoresButton) ...[
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _showHighScores = true;
-                  });
-                },
-                child: const Text(
-                  'HIGH SCORES',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

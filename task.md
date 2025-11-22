@@ -55,3 +55,7 @@
 - [x] App Logo Creation <!-- id: 52 -->
     - [x] Generate App Logo <!-- id: 53 -->
     - [x] Resize and Replace Icons <!-- id: 54 -->
+- [x] Game Instructions <!-- id: 55 -->
+    - [x] Add Help Button to Start Screen <!-- id: 56 -->
+    - [x] Implement Instructions Overlay <!-- id: 57 -->
+    - [x] Use Custom Shapes in Instructions <!-- id: 58 -->

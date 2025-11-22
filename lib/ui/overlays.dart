@@ -53,7 +53,7 @@ class _GameOverlaysState extends State<GameOverlays> {
 
   Widget _buildHighScoresOverlay(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.85),
+      color: Colors.black.withValues(alpha: 0.85),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -167,7 +167,7 @@ class _GameOverlaysState extends State<GameOverlays> {
 
   Widget _buildGameOverOverlay(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.85),
+      color: Colors.black.withValues(alpha: 0.85),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -311,7 +311,7 @@ class _GameOverlaysState extends State<GameOverlays> {
     bool showHighScoresButton = false,
   }) {
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black.withValues(alpha: 0.7),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

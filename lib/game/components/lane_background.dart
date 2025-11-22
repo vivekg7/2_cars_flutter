@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 
@@ -14,12 +13,15 @@ class LaneBackground extends PositionComponent {
   @override
   void render(Canvas canvas) {
     // Draw background
-    canvas.drawRect(size.toRect(), Paint()..color = color.withOpacity(0.8));
+    canvas.drawRect(
+      size.toRect(),
+      Paint()..color = color.withValues(alpha: 0.8),
+    );
 
     // Draw divider
     canvas.drawRect(
       Rect.fromLTWH(size.x / 2 - 1, 0, 2, size.y),
-      Paint()..color = Colors.white.withOpacity(0.2),
+      Paint()..color = Colors.white.withValues(alpha: 0.2),
     );
   }
 }

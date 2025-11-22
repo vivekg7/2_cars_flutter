@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../models/falling_object.dart';
@@ -52,7 +51,7 @@ class FallingObjectComponent extends PositionComponent {
 
     // Inner Core
     final corePaint = Paint()
-      ..color = Colors.yellow.withOpacity(0.5)
+      ..color = Colors.yellow.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 8, corePaint);
 
@@ -66,19 +65,19 @@ class FallingObjectComponent extends PositionComponent {
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
     // Main Body
-    final bodyPaint = Paint()..color = Colors.grey.shade900;
+    final bodyPaint = Paint()..color = Colors.yellow;
     canvas.drawRect(rect, bodyPaint);
 
     // Border
     final borderPaint = Paint()
-      ..color = Colors.grey.shade800
+      ..color = Colors.yellow.withValues(alpha: 0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
     canvas.drawRect(rect, borderPaint);
 
     // "X" Warning Symbol
     final xPaint = Paint()
-      ..color = Colors.black.withOpacity(0.6)
+      ..color = Colors.grey
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 

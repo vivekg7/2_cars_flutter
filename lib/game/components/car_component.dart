@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -71,8 +70,8 @@ class CarComponent extends PositionComponent with CollisionCallbacks {
     final random = Random();
     final isBlue = random.nextBool();
     final color = isBlue
-        ? Colors.blue.withOpacity(0.6)
-        : Colors.grey.withOpacity(0.6);
+        ? Colors.blue.withValues(alpha: 0.6)
+        : Colors.grey.withValues(alpha: 0.6);
 
     // Dual exhaust positions
     // Car width is size.x (50). Center is 0.
@@ -166,7 +165,7 @@ class CarComponent extends PositionComponent with CollisionCallbacks {
         Rect.fromLTWH(5, 10, size.x - 10, 15),
         const Radius.circular(4),
       ),
-      Paint()..color = Colors.black.withOpacity(0.5),
+      Paint()..color = Colors.black.withValues(alpha: 0.5),
     );
 
     // Lights

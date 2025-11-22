@@ -17,9 +17,22 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Changelog
 
+### 1.1.0
+
+- How to Play
+- Modes (easy, medium, hard)
+- offset the car lanes
+- cars positioned more comfortably
+- back to main menu button
+
 ### 1.0.0
 
 - Initial release
 - Top 5 high scores
 - Pause and resume game
 - animations
+
+## TODO
+
+- [ ] Add sound effects
+- [ ] Add music

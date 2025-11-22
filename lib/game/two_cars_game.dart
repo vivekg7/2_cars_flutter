@@ -151,8 +151,17 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     _currentSpeed = gameState.currentDifficulty.initialSpeed;
 
     _timeSinceLastSpawn = 0;
-    _distanceLeft = 0;
-    _distanceRight = 0;
+
+    // For fixed spacing modes, add random offset to create misalignment
+    if (gameState.currentDifficulty.useFixedSpacing) {
+      final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
+      _distanceLeft = _random.nextDouble() * maxOffset;
+      _distanceRight = _random.nextDouble() * maxOffset;
+    } else {
+      _distanceLeft = 0;
+      _distanceRight = 0;
+    }
+
     _spawnInterval = 1.0;
 
     // Clear existing objects
@@ -272,8 +281,15 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     children.whereType<FallingObjectComponent>().forEach(remove);
 
     _timeSinceLastSpawn = 0;
-    _distanceLeft = 0;
-    _distanceRight = 0;
+    // For fixed spacing modes, add random offset to create misalignment
+    if (gameState.currentDifficulty.useFixedSpacing) {
+      final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
+      _distanceLeft = _random.nextDouble() * maxOffset;
+      _distanceRight = _random.nextDouble() * maxOffset;
+    } else {
+      _distanceLeft = 0;
+      _distanceRight = 0;
+    }
     resumeEngine();
   }
 
@@ -292,7 +308,15 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     children.whereType<ParticleSystemComponent>().forEach(remove);
 
     _timeSinceLastSpawn = 0;
-    _distanceLeft = 0;
-    _distanceRight = 0;
+
+    // For fixed spacing modes, add random offset to create misalignment
+    if (gameState.currentDifficulty.useFixedSpacing) {
+      final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
+      _distanceLeft = _random.nextDouble() * maxOffset;
+      _distanceRight = _random.nextDouble() * maxOffset;
+    } else {
+      _distanceLeft = 0;
+      _distanceRight = 0;
+    }
   }
 }

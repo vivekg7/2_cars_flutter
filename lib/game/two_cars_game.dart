@@ -265,10 +265,15 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     leftCarComponent.updateLane();
     rightCarComponent.updateLane();
 
+    // Set initial speed based on difficulty
+    _currentSpeed = gameState.currentDifficulty.initialSpeed;
+
     // Remove all objects
     children.whereType<FallingObjectComponent>().forEach(remove);
 
     _timeSinceLastSpawn = 0;
+    _distanceLeft = 0;
+    _distanceRight = 0;
     resumeEngine();
   }
 }

@@ -1,4 +1,4 @@
-package com.example.two_cars_flutter
+package com.crylo.two_cars
 
 import io.flutter.embedding.android.FlutterActivity
 

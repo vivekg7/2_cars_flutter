@@ -1,9 +1,12 @@
 import 'dart:ui';
+import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../models/car.dart';
+import '../../models/game_state.dart'; // For GameStatus
 
 import 'package:flame/collisions.dart';
+import 'package:flame/particles.dart'; // For particles
 import '../two_cars_game.dart'; // Assuming this import is needed for TwoCarsGame
 import 'falling_object_component.dart'; // Assuming this import is needed for FallingObjectComponent
 
@@ -43,13 +46,56 @@ class CarComponent extends PositionComponent with CollisionCallbacks {
   void update(double dt) {
     super.update(dt);
 
-    // Smoothly interpolate to target X
+    // Smooth movement
     if ((position.x - _targetX).abs() > 0.1) {
-      // Simple lerp for smoothness
-      position.x += (_targetX - position.x) * 15 * dt;
+      double moveAmount = (_targetX - position.x) * 10 * dt;
+      position.x += moveAmount;
     } else {
       position.x = _targetX;
     }
+
+    // Exhaust Particles
+    // Generate particles periodically
+    if (Random().nextDouble() < 0.6) {
+      // Increased frequency from 0.3 to 0.6
+      final game = findGame()! as TwoCarsGame;
+      // Only spawn if game is playing
+      if (game.gameState.status == GameStatus.playing) {
+        _spawnExhaustParticle();
+      }
+    }
+  }
+
+  void _spawnExhaustParticle() {
+    final game = findGame()! as TwoCarsGame;
+    final random = Random();
+    final isBlue = random.nextBool();
+    final color = isBlue
+        ? Colors.blue.withOpacity(0.6)
+        : Colors.grey.withOpacity(0.6);
+
+    // Position at bottom center of car
+    // Car anchor is center, so position is center.
+    // Bottom center is position.x, position.y + size.y/2
+    final particlePos = position.clone() + Vector2(0, size.y / 2);
+
+    game.add(
+      ParticleSystemComponent(
+        particle: AcceleratedParticle(
+          acceleration: Vector2(0, 100), // Moving down
+          speed: Vector2(
+            random.nextDouble() * 20 - 10,
+            100 + random.nextDouble() * 50,
+          ),
+          position: particlePos,
+          child: CircleParticle(
+            radius: random.nextDouble() * 2 + 1,
+            paint: Paint()..color = color,
+            lifespan: 0.5,
+          ),
+        ),
+      ),
+    );
   }
 
   void updateLane() {

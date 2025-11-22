@@ -24,3 +24,34 @@
     - [x] Create Car and Object Components <!-- id: 21 -->
     - [x] Implement Game Loop & Collision <!-- id: 22 -->
     - [x] Integrate with Flutter UI (Overlays) <!-- id: 23 -->
+- [x] Score Persistence <!-- id: 24 -->
+    - [x] Create ScoreEntry Model <!-- id: 25 -->
+    - [x] Implement ScoreService (SharedPrefs) <!-- id: 26 -->
+    - [x] Update GameState to Save Scores <!-- id: 27 -->
+    - [x] Display High Scores in UI <!-- id: 28 -->
+- [x] Home Screen Improvements <!-- id: 29 -->
+    - [x] Add High Scores Button to Start Screen <!-- id: 30 -->
+    - [x] Implement High Scores Overlay/Dialog <!-- id: 31 -->
+- [x] Collision & Particles <!-- id: 32 -->
+    - [x] Add HasCollisionDetection to Game <!-- id: 33 -->
+    - [x] Add Hitboxes to Components <!-- id: 34 -->
+    - [x] Implement onCollision Logic <!-- id: 35 -->
+    - [x] Implement Particle Effects <!-- id: 36 -->
+- [x] Game Over Delay <!-- id: 37 -->
+    - [x] Add Delay to Game Over Trigger <!-- id: 38 -->
+    - [x] Ensure Particles Play During Delay <!-- id: 39 -->
+- [x] Car Exhaust Particles <!-- id: 40 -->
+    - [x] Add Particle Generation to CarComponent Update <!-- id: 41 -->
+    - [x] Configure Exhaust Colors and Physics <!-- id: 42 -->
+- [x] Visual Overhaul <!-- id: 43 -->
+    - [x] Redesign Car Rendering <!-- id: 44 -->
+    - [x] Redesign Circle Rendering <!-- id: 45 -->
+    - [x] Redesign Square Rendering <!-- id: 46 -->
+- [x] Play Store Preparation <!-- id: 47 -->
+    - [x] Rename Package to com.crylo.two_cars <!-- id: 48 -->
+    - [x] Update App Label <!-- id: 49 -->
+    - [x] Configure Signing in build.gradle.kts <!-- id: 50 -->
+    - [x] Build App Bundle <!-- id: 51 -->
+- [x] App Logo Creation <!-- id: 52 -->
+    - [x] Generate App Logo <!-- id: 53 -->
+    - [x] Resize and Replace Icons <!-- id: 54 -->

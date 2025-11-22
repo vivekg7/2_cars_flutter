@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../models/falling_object.dart';
 import '../../models/car.dart';
 
+import 'package:flame/collisions.dart';
+
 class FallingObjectComponent extends PositionComponent {
   final FallingObject object;
   final double laneWidth;
@@ -18,6 +20,12 @@ class FallingObjectComponent extends PositionComponent {
     double offset = object.laneIndex == 0 ? laneWidth / 2 : laneWidth * 1.5;
     position.x = startX + offset;
     position.y = -50; // Start above screen
+
+    if (object.type == ObjectType.circle) {
+      add(CircleHitbox());
+    } else {
+      add(RectangleHitbox());
+    }
   }
 
   @override

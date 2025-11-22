@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 import '../../models/game_state.dart';
 import '../../models/car.dart';
@@ -9,7 +11,7 @@ import 'components/lane_background.dart';
 import 'components/car_component.dart';
 import 'components/falling_object_component.dart';
 
-class TwoCarsGame extends FlameGame with TapCallbacks {
+class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   final GameState gameState;
   final VoidCallback onGameOver;
 
@@ -99,33 +101,18 @@ class TwoCarsGame extends FlameGame with TapCallbacks {
       _timeSinceLastSpawn = 0;
     }
 
-    // Move Objects & Check Collision
-    // We iterate backwards to safely remove
-    final objects = children.whereType<FallingObjectComponent>().toList();
+    // Move Objects
     double speed = 300 * gameState.difficultyMultiplier; // Pixels per second
+    for (var component in children.whereType<FallingObjectComponent>()) {
+      component.position.y += speed * dt;
 
-    for (var obj in objects) {
-      obj.position.y += speed * dt;
-
-      // Check Collision
-      if (obj.position.y > size.y - 120 && obj.position.y < size.y - 60) {
-        // In car zone
-        Car targetCar = obj.object.side == CarSide.left ? leftCar : rightCar;
-        if (targetCar.laneIndex == obj.object.laneIndex) {
-          // Hit!
-          if (obj.object.type == ObjectType.circle) {
-            gameState.incrementScore();
-            remove(obj);
-          } else {
-            _gameOver();
-          }
+      // Check for missed circles (passed bottom of screen)
+      if (component.position.y > size.y) {
+        if (component.object.type == ObjectType.circle) {
+          // Missed a circle - Game Over
+          gameOver();
         }
-      } else if (obj.position.y > size.y) {
-        // Missed
-        if (obj.object.type == ObjectType.circle) {
-          _gameOver();
-        }
-        remove(obj);
+        component.removeFromParent();
       }
     }
   }
@@ -152,10 +139,45 @@ class TwoCarsGame extends FlameGame with TapCallbacks {
     add(FallingObjectComponent(object: obj, laneWidth: laneWidth));
   }
 
-  void _gameOver() {
-    gameState.endGame();
-    onGameOver();
-    pauseEngine();
+  void handleCollision(CarComponent car, FallingObjectComponent object) {
+    if (object.isRemoved) return;
+
+    if (object.object.type == ObjectType.circle) {
+      // Collect circle
+      gameState.incrementScore();
+      object.removeFromParent();
+      _spawnParticles(object.position, Colors.yellow, 10);
+    } else {
+      // Hit square - Game Over
+      object.removeFromParent();
+      _spawnParticles(object.position, Colors.red, 20);
+      gameOver();
+    }
+  }
+
+  void _spawnParticles(Vector2 position, Color color, int count) {
+    add(
+      ParticleSystemComponent(
+        particle: Particle.generate(
+          count: count,
+          lifespan: 0.5,
+          generator: (i) => AcceleratedParticle(
+            acceleration: Vector2(0, 200),
+            speed: Vector2.random(Random()) * 200 - Vector2(100, 100),
+            position: position.clone(),
+            child: CircleParticle(radius: 2, paint: Paint()..color = color),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void gameOver() {
+    if (gameState.status == GameStatus.playing) {
+      gameState.endGame();
+      onGameOver();
+      pauseEngine();
+    }
   }
 
   void resetGame() {

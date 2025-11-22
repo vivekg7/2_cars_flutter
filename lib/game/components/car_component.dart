@@ -3,7 +3,11 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../../models/car.dart';
 
-class CarComponent extends PositionComponent {
+import 'package:flame/collisions.dart';
+import '../two_cars_game.dart'; // Assuming this import is needed for TwoCarsGame
+import 'falling_object_component.dart'; // Assuming this import is needed for FallingObjectComponent
+
+class CarComponent extends PositionComponent with CollisionCallbacks {
   final Car car;
   final Color color;
   final double laneWidth;
@@ -20,6 +24,19 @@ class CarComponent extends PositionComponent {
   @override
   void onLoad() {
     _updateTargetPosition(immediate: true);
+    add(RectangleHitbox());
+  }
+
+  @override
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (other is FallingObjectComponent) {
+      final game = findGame()! as TwoCarsGame;
+      game.handleCollision(this, other);
+    }
   }
 
   @override

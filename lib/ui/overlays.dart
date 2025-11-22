@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/game_state.dart';
 import '../models/score_service.dart';
 
-class GameOverlays extends StatelessWidget {
+class GameOverlays extends StatefulWidget {
   final GameState gameState;
   final VoidCallback onStart;
   final VoidCallback onResume;
@@ -16,21 +16,33 @@ class GameOverlays extends StatelessWidget {
   });
 
   @override
+  State<GameOverlays> createState() => _GameOverlaysState();
+}
+
+class _GameOverlaysState extends State<GameOverlays> {
+  bool _showHighScores = false;
+
+  @override
   Widget build(BuildContext context) {
-    switch (gameState.status) {
+    if (_showHighScores) {
+      return _buildHighScoresOverlay(context);
+    }
+
+    switch (widget.gameState.status) {
       case GameStatus.initial:
         return _buildOverlay(
           context,
           title: '2 CARS',
           buttonText: 'PLAY',
-          onPressed: onStart,
+          onPressed: widget.onStart,
+          showHighScoresButton: true,
         );
       case GameStatus.paused:
         return _buildOverlay(
           context,
           title: 'PAUSED',
           buttonText: 'RESUME',
-          onPressed: onResume,
+          onPressed: widget.onResume,
         );
       case GameStatus.gameOver:
         return _buildGameOverOverlay(context);
@@ -39,7 +51,7 @@ class GameOverlays extends StatelessWidget {
     }
   }
 
-  Widget _buildGameOverOverlay(BuildContext context) {
+  Widget _buildHighScoresOverlay(BuildContext context) {
     return Container(
       color: Colors.black.withOpacity(0.85),
       child: Center(
@@ -47,21 +59,12 @@ class GameOverlays extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'GAME OVER',
+              'HIGH SCORES',
               style: TextStyle(
-                fontSize: 50,
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                letterSpacing: 5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Score: ${gameState.score}',
-              style: const TextStyle(
-                fontSize: 32,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+                letterSpacing: 3,
               ),
             ),
             const SizedBox(height: 30),
@@ -83,7 +86,133 @@ class GameOverlays extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     constraints: const BoxConstraints(
                       maxWidth: 400,
-                      maxHeight: 300,
+                      maxHeight: 400,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Monthly Best: $monthlyHigh',
+                          style: const TextStyle(
+                            color: Colors.yellow,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: topScores.length,
+                            itemBuilder: (context, index) {
+                              final entry = topScores[index];
+                              final dateStr = DateFormat(
+                                'MMM d, HH:mm',
+                              ).format(entry.date);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${index + 1}. $dateStr',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${entry.score}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _showHighScores = false;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 10,
+                ),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('BACK'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameOverOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'GAME OVER',
+              style: TextStyle(
+                fontSize: 50,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Score: ${widget.gameState.score}',
+              style: const TextStyle(
+                fontSize: 32,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 30),
+            // We can reuse the high scores view logic here or keep it simple
+            // Let's keep it simple as before but maybe just top 3?
+            // Or just the same list.
+            Flexible(
+              child: FutureBuilder<List<dynamic>>(
+                future: Future.wait([
+                  ScoreService().getTopScores(),
+                  ScoreService().getMonthlyHighScore(),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const CircularProgressIndicator(color: Colors.white);
+                  }
+
+                  final topScores = snapshot.data![0] as List<ScoreEntry>;
+                  final monthlyHigh = snapshot.data![1] as int;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    constraints: const BoxConstraints(
+                      maxWidth: 400,
+                      maxHeight: 250,
                     ),
                     child: Column(
                       children: [
@@ -96,7 +225,7 @@ class GameOverlays extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Top 10 Scores',
+                          'Top Scores',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -107,7 +236,9 @@ class GameOverlays extends StatelessWidget {
                         Expanded(
                           child: ListView.builder(
                             shrinkWrap: true,
-                            itemCount: topScores.length,
+                            itemCount: topScores.length > 5
+                                ? 5
+                                : topScores.length, // Show top 5 on game over
                             itemBuilder: (context, index) {
                               final entry = topScores[index];
                               final dateStr = DateFormat(
@@ -150,7 +281,7 @@ class GameOverlays extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: onStart,
+              onPressed: widget.onStart,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 50,
@@ -177,6 +308,7 @@ class GameOverlays extends StatelessWidget {
     String? subtitle,
     required String buttonText,
     required VoidCallback onPressed,
+    bool showHighScoresButton = false,
   }) {
     return Container(
       color: Colors.black.withOpacity(0.7),
@@ -218,6 +350,24 @@ class GameOverlays extends StatelessWidget {
               ),
               child: Text(buttonText),
             ),
+            if (showHighScoresButton) ...[
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _showHighScores = true;
+                  });
+                },
+                child: const Text(
+                  'HIGH SCORES',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

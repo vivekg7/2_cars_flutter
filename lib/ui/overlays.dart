@@ -9,12 +9,14 @@ class GameOverlays extends StatefulWidget {
   final GameState gameState;
   final VoidCallback onStart;
   final VoidCallback onResume;
+  final VoidCallback onMainMenu;
 
   const GameOverlays({
     super.key,
     required this.gameState,
     required this.onStart,
     required this.onResume,
+    required this.onMainMenu,
   });
 
   @override
@@ -155,6 +157,14 @@ class _GameOverlaysState extends State<GameOverlays> {
             child: const Text(
               'RESUME',
               style: TextStyle(fontSize: 24, color: Colors.black),
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: widget.onMainMenu,
+            child: const Text(
+              'MAIN MENU',
+              style: TextStyle(fontSize: 20, color: Colors.white),
             ),
           ),
         ],
@@ -509,6 +519,14 @@ class _GameOverlaysState extends State<GameOverlays> {
                 ),
               ),
               child: const Text('RETRY'),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: widget.onMainMenu,
+              child: const Text(
+                'MAIN MENU',
+                style: TextStyle(fontSize: 20, color: Colors.white),
+              ),
             ),
           ],
         ),

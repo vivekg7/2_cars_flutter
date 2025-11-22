@@ -71,6 +71,16 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> quitGame() async {
+    if (status == GameStatus.paused || status == GameStatus.playing) {
+      await _scoreService.saveScore(score, currentDifficulty);
+    }
+    status = GameStatus.initial;
+    score = 0;
+    await _loadHighScore();
+    notifyListeners();
+  }
+
   void incrementScore() {
     score++;
     notifyListeners();

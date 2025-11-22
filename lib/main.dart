@@ -97,6 +97,13 @@ class _GamePageState extends State<GamePage> {
                     _gameState.resumeGame();
                     setState(() {});
                   },
+                  onMainMenu: () async {
+                    await _gameState.quitGame();
+                    _game
+                        .clearGame(); // Clears entities without changing game state
+                    _game.pauseEngine(); // Stop engine
+                    setState(() {});
+                  },
                 );
               },
             ),

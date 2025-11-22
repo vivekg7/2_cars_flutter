@@ -30,23 +30,59 @@ class FallingObjectComponent extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final paint = Paint()..color = Colors.white;
+    super.render(canvas);
 
     if (object.type == ObjectType.circle) {
-      canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, paint);
+      _renderCircle(canvas);
     } else {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(size.toRect(), const Radius.circular(4)),
-        paint,
-      );
+      _renderSquare(canvas);
     }
+  }
 
-    // Shadow
-    canvas.drawShadow(
-      Path()..addOval(size.toRect()),
-      Colors.black.withOpacity(0.2),
-      2.0,
-      true,
-    );
+  void _renderCircle(Canvas canvas) {
+    final center = Offset(size.x / 2, size.y / 2);
+    final radius = size.x / 2;
+
+    // Outer Ring
+    final ringPaint = Paint()
+      ..color = Colors.yellow
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    canvas.drawCircle(center, radius - 2, ringPaint);
+
+    // Inner Core
+    final corePaint = Paint()
+      ..color = Colors.yellow.withOpacity(0.5)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius - 8, corePaint);
+
+    // Center Star/Diamond
+    final starPaint = Paint()..color = Colors.white;
+    canvas.drawCircle(center, 4, starPaint);
+  }
+
+  void _renderSquare(Canvas canvas) {
+    // Hazard Block
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+
+    // Main Body
+    final bodyPaint = Paint()..color = Colors.grey.shade900;
+    canvas.drawRect(rect, bodyPaint);
+
+    // Border
+    final borderPaint = Paint()
+      ..color = Colors.grey.shade800
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    canvas.drawRect(rect, borderPaint);
+
+    // "X" Warning Symbol
+    final xPaint = Paint()
+      ..color = Colors.black.withOpacity(0.6)
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(const Offset(8, 8), Offset(size.x - 8, size.y - 8), xPaint);
+    canvas.drawLine(Offset(size.x - 8, 8), Offset(8, size.y - 8), xPaint);
   }
 }

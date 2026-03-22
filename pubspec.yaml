@@ -24,6 +24,8 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
 
 flutter:
 
@@ -44,3 +46,26 @@ flutter:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  macos:
+    generate: true
+  web:
+    generate: true
+  image_path: "assets/app_icon.png"
+  adaptive_icon_background: "#1a1a2e"
+  adaptive_icon_foreground: "assets/app_icon.png"
+
+flutter_native_splash:
+  color: "#1a1a2e"
+  color_dark: "#1a1a2e"
+  image: "assets/app_icon.png"
+  image_dark: "assets/app_icon.png"
+  android: true
+  ios: true
+  web: true
+  android_12:
+    color: "#1a1a2e"
+    color_dark: "#1a1a2e"

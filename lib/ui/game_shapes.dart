@@ -35,54 +35,96 @@ class GameShapePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // Outer Ring
-    final ringPaint = Paint()
-      ..color = Colors.yellow
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4;
-    canvas.drawCircle(center, radius - 2, ringPaint);
+    // Gold coin with gradient
+    canvas.drawCircle(
+      center,
+      radius - 1,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.3, -0.3),
+          radius: 0.9,
+          colors: [
+            const Color(0xFFFFE87C),
+            const Color(0xFFFFD700),
+            const Color(0xFFB8860B),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: radius - 1)),
+    );
 
-    // Inner Core
-    final corePaint = Paint()
-      ..color = Colors.yellow.withValues(alpha: 0.5)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius - 8, corePaint);
+    // Rim
+    canvas.drawCircle(
+      center,
+      radius - 1.5,
+      Paint()
+        ..color = const Color(0xFFB8860B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
 
-    // Center Star/Diamond
-    final starPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(center, 4, starPaint);
+    // Inner ring
+    canvas.drawCircle(
+      center,
+      radius - 6,
+      Paint()
+        ..color = const Color(0xFFFFE87C).withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    // Specular highlight
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(center.dx - 3, center.dy - 4),
+        width: 8,
+        height: 5,
+      ),
+      Paint()..color = Colors.white.withValues(alpha: 0.35),
+    );
+
+    // Center dot
+    canvas.drawCircle(center, 3, Paint()..color = Colors.white.withValues(alpha: 0.6));
   }
 
   void _renderSquare(Canvas canvas, Size size) {
-    // Hazard Block
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final s = size.width;
+    final rect = Rect.fromLTWH(0, 0, s, s);
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(5));
 
-    // Main Body
-    final bodyPaint = Paint()..color = Colors.yellow;
-    canvas.drawRect(rect, bodyPaint);
+    // Gradient fill
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFCC2222), Color(0xFF8B0000)],
+        ).createShader(rect),
+    );
 
     // Border
-    final borderPaint = Paint()
-      ..color = Colors.yellow.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    canvas.drawRect(rect, borderPaint);
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = const Color(0xFF555555)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
 
-    // "X" Warning Symbol
-    final xPaint = Paint()
-      ..color = Colors.grey
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-
+    // Beveled X
     canvas.drawLine(
-      const Offset(8, 8),
-      Offset(size.width - 8, size.height - 8),
-      xPaint,
+      Offset(9, 9), Offset(s - 9, s - 9),
+      Paint()
+        ..color = const Color(0xFFEEEEEE)
+        ..strokeWidth = 3.5
+        ..strokeCap = StrokeCap.round,
     );
     canvas.drawLine(
-      Offset(size.width - 8, 8),
-      Offset(8, size.height - 8),
-      xPaint,
+      Offset(s - 9, 9), Offset(9, s - 9),
+      Paint()
+        ..color = const Color(0xFFAAAAAA)
+        ..strokeWidth = 3.5
+        ..strokeCap = StrokeCap.round,
     );
   }
 

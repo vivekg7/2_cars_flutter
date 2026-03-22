@@ -49,15 +49,37 @@ class _GamePageState extends State<GamePage> {
         setState(() {}); // Rebuild to show game over overlay
       },
     );
+    _gameState.addListener(_onGameStateChanged);
+  }
+
+  @override
+  void dispose() {
+    _gameState.removeListener(_onGameStateChanged);
+    super.dispose();
+  }
+
+  void _onGameStateChanged() {
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = _gameState.currentTheme;
+
     return Scaffold(
+      backgroundColor: theme.backgroundColor,
       body: Stack(
         children: [
-          // Game Widget
-          GameWidget(game: _game),
+          // Game Widget (with screen shake offset)
+          AnimatedBuilder(
+            animation: _gameState,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(_game.shakeOffsetX, _game.shakeOffsetY),
+                child: GameWidget(game: _game),
+              );
+            },
+          ),
 
           // Score Display
           if (_gameState.status == GameStatus.playing)
@@ -71,9 +93,17 @@ class _GamePageState extends State<GamePage> {
                   builder: (context, child) {
                     return Text(
                       '${_gameState.score}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
+                        color: theme.scoreTextColor,
+                        shadows: theme.titleHasGlow
+                            ? [
+                                Shadow(
+                                    color: theme.scoreTextColor,
+                                    blurRadius: 15),
+                              ]
+                            : null,
                       ),
                     );
                   },
@@ -99,9 +129,8 @@ class _GamePageState extends State<GamePage> {
                   },
                   onMainMenu: () async {
                     await _gameState.quitGame();
-                    _game
-                        .clearGame(); // Clears entities without changing game state
-                    _game.pauseEngine(); // Stop engine
+                    _game.clearGame();
+                    _game.pauseEngine();
                     setState(() {});
                   },
                 );
@@ -114,7 +143,8 @@ class _GamePageState extends State<GamePage> {
               top: 50,
               right: 20,
               child: IconButton(
-                icon: const Icon(Icons.pause, color: Colors.white, size: 30),
+                icon: Icon(Icons.pause,
+                    color: theme.scoreTextColor, size: 30),
                 onPressed: () {
                   _game.pauseEngine();
                   _gameState.pauseGame();

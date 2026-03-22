@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'score_service.dart';
 import 'game_difficulty.dart';
+import 'game_theme.dart';
 
 enum GameStatus { initial, playing, paused, gameOver }
 
@@ -10,11 +12,29 @@ class GameState extends ChangeNotifier {
   int difficultyLevel = 1;
   int monthlyHighScore = 0;
   GameDifficulty currentDifficulty = GameDifficulty.easy;
+  GameTheme currentTheme = GameTheme.neon;
 
   final ScoreService _scoreService = ScoreService();
 
+  static const String _themeKey = 'selected_theme';
+
   GameState() {
     _loadHighScore();
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeId = prefs.getString(_themeKey) ?? 'neon';
+    currentTheme = GameTheme.fromId(themeId);
+    notifyListeners();
+  }
+
+  void setTheme(GameTheme theme) async {
+    currentTheme = theme;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeKey, theme.id);
+    notifyListeners();
   }
 
   Future<void> _loadHighScore() async {

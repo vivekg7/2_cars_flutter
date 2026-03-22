@@ -5,11 +5,15 @@ import 'package:flame/game.dart';
 import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 import '../../models/game_state.dart';
+import '../../models/game_theme.dart';
 import '../../models/car.dart';
 import '../../models/falling_object.dart';
 import 'components/lane_background.dart';
 import 'components/car_component.dart';
 import 'components/falling_object_component.dart';
+import 'components/rect_particle.dart';
+import 'components/score_popup.dart';
+import 'components/speed_lines.dart';
 
 class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   final GameState gameState;
@@ -19,40 +23,49 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   late Car rightCar;
   late CarComponent leftCarComponent;
   late CarComponent rightCarComponent;
+  late LaneBackground leftLaneBg;
+  late LaneBackground rightLaneBg;
+  late SpeedLines speedLines;
   double _currentSpeed = 300;
   double _timeSinceLastSpawn = 0;
   double _distanceLeft = 0;
   double _distanceRight = 0;
-  double _spawnInterval = 1.0; // Seconds
+  double _spawnInterval = 1.0;
   final Random _random = Random();
+
+  /// Screen shake state — read by GamePage to offset the widget.
+  double shakeOffsetX = 0;
+  double shakeOffsetY = 0;
+  double _shakeTimeRemaining = 0;
 
   TwoCarsGame({required this.gameState, required this.onGameOver});
 
+  GameTheme get theme => gameState.currentTheme;
+
   @override
-  Color backgroundColor() => const Color(0xFF2C3E50);
+  Color backgroundColor() => theme.backgroundColor;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Calculate dimensions
     final laneWidth = size.x / 4;
 
     // Add Lane Backgrounds
-    add(
-      LaneBackground(
-        color: const Color(0xFFE74C3C),
-        size: Vector2(size.x / 2, size.y),
-        position: Vector2(0, 0),
-      ),
+    leftLaneBg = LaneBackground(
+      theme: theme,
+      isLeftSide: true,
+      size: Vector2(size.x / 2, size.y),
+      position: Vector2(0, 0),
     );
-    add(
-      LaneBackground(
-        color: const Color(0xFF3498DB),
-        size: Vector2(size.x / 2, size.y),
-        position: Vector2(size.x / 2, 0),
-      ),
+    rightLaneBg = LaneBackground(
+      theme: theme,
+      isLeftSide: false,
+      size: Vector2(size.x / 2, size.y),
+      position: Vector2(size.x / 2, 0),
     );
+    add(leftLaneBg);
+    add(rightLaneBg);
 
     // Initialize Cars
     leftCar = Car(side: CarSide.left, laneIndex: 0);
@@ -60,18 +73,31 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
     leftCarComponent = CarComponent(
       car: leftCar,
-      color: Colors.white,
+      theme: theme,
       laneWidth: laneWidth,
     )..position = Vector2(0, size.y - 150);
 
     rightCarComponent = CarComponent(
       car: rightCar,
-      color: Colors.white,
+      theme: theme,
       laneWidth: laneWidth,
     )..position = Vector2(0, size.y - 150);
 
     add(leftCarComponent);
     add(rightCarComponent);
+
+    // Speed lines overlay
+    speedLines = SpeedLines(theme: theme, size: size);
+    add(speedLines);
+  }
+
+  /// Refresh theme on all components (called when theme changes).
+  void refreshTheme() {
+    leftLaneBg.theme = theme;
+    rightLaneBg.theme = theme;
+    leftCarComponent.theme = theme;
+    rightCarComponent.theme = theme;
+    speedLines.theme = theme;
   }
 
   @override
@@ -92,6 +118,18 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   void update(double dt) {
     super.update(dt);
 
+    // Screen shake (runs even when game ends)
+    if (_shakeTimeRemaining > 0) {
+      _shakeTimeRemaining -= dt;
+      if (_shakeTimeRemaining <= 0) {
+        shakeOffsetX = 0;
+        shakeOffsetY = 0;
+      } else {
+        shakeOffsetX = (_random.nextDouble() * 8 - 4);
+        shakeOffsetY = (_random.nextDouble() * 8 - 4);
+      }
+    }
+
     if (gameState.status != GameStatus.playing) return;
 
     // Update speed based on difficulty
@@ -100,9 +138,14 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       _currentSpeed += 5 * dt;
     }
 
+    // Update lane scroll speed & speed lines
+    leftLaneBg.scrollSpeed = _currentSpeed;
+    rightLaneBg.scrollSpeed = _currentSpeed;
+    speedLines.currentSpeed = _currentSpeed;
+    speedLines.maxSpeed = difficulty.maxSpeed;
+
     // Spawning Logic
     if (difficulty.useFixedSpacing) {
-      // Fixed Distance Spawning (Medium/Hard) - Per Side
       _distanceLeft += _currentSpeed * dt;
       _distanceRight += _currentSpeed * dt;
 
@@ -116,12 +159,10 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
         _distanceRight = 0;
       }
     } else {
-      // Random Time Spawning (Easy) - Global
       _timeSinceLastSpawn += dt;
       if (_timeSinceLastSpawn >= _spawnInterval) {
         _spawnFallingObject();
         _timeSinceLastSpawn = 0;
-        // Randomize next interval between 0.8 and 1.5 seconds
         _spawnInterval = 0.8 + _random.nextDouble() * 0.7;
       }
     }
@@ -131,10 +172,8 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       if (child is FallingObjectComponent) {
         child.position.y += _currentSpeed * dt;
 
-        // Check if object missed (passed bottom)
         if (child.position.y > size.y + 50) {
           if (child.object.type == ObjectType.circle && !child.isRemoved) {
-            // Missed a circle -> Game Over
             gameOver();
           }
           child.removeFromParent();
@@ -147,12 +186,9 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     gameState.setStatus(GameStatus.playing);
     gameState.score = 0;
 
-    // Set initial speed based on difficulty
     _currentSpeed = gameState.currentDifficulty.initialSpeed;
-
     _timeSinceLastSpawn = 0;
 
-    // For fixed spacing modes, add random offset to create misalignment
     if (gameState.currentDifficulty.useFixedSpacing) {
       final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
       _distanceLeft = _random.nextDouble() * maxOffset;
@@ -164,7 +200,6 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
 
     _spawnInterval = 1.0;
 
-    // Clear existing objects
     children.whereType<FallingObjectComponent>().forEach(
       (c) => c.removeFromParent(),
     );
@@ -178,7 +213,6 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   void _spawnFallingObject({CarSide? forceSide}) {
     final laneWidth = size.x / 4;
 
-    // Determine Side
     CarSide side;
     if (forceSide != null) {
       side = forceSide;
@@ -186,7 +220,6 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       side = _random.nextBool() ? CarSide.left : CarSide.right;
     }
 
-    // Determine Lane (0 or 1 for left, 2 or 3 for right)
     int laneIndex;
     if (side == CarSide.left) {
       laneIndex = _random.nextBool() ? 0 : 1;
@@ -194,7 +227,6 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       laneIndex = _random.nextBool() ? 2 : 3;
     }
 
-    // Determine Type (Circle or Square)
     ObjectType type = _random.nextBool()
         ? ObjectType.circle
         : ObjectType.square;
@@ -209,48 +241,82 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
       verticalPosition: -0.1,
     );
 
-    add(FallingObjectComponent(object: object, laneWidth: laneWidth));
+    add(FallingObjectComponent(
+      object: object,
+      laneWidth: laneWidth,
+      theme: theme,
+    ));
   }
 
   void handleCollision(CarComponent car, FallingObjectComponent object) {
     if (object.isRemoved) return;
 
     if (object.object.type == ObjectType.circle) {
-      // Collect circle
       gameState.incrementScore();
+      _spawnCollectionParticles(object.position);
+      // Score popup
+      add(ScorePopup(position: object.position.clone(), theme: theme));
       object.removeFromParent();
-      _spawnParticles(object.position, Colors.yellow, 10);
     } else {
-      // Hit square - Game Over
       object.removeFromParent();
-      _spawnParticles(
-        object.position,
-        Colors.red,
-        40,
-      ); // More particles for explosion
+      _spawnCollisionParticles(object.position);
+      // Screen shake
+      _triggerScreenShake();
 
-      // Delay game over to show explosion
       Future.delayed(const Duration(milliseconds: 500), () {
         gameOver();
       });
     }
   }
 
-  void _spawnParticles(Vector2 position, Color color, int count) {
+  void _triggerScreenShake() {
+    _shakeTimeRemaining = 0.25; // ~4 frames at 60fps worth of shake
+  }
+
+  void _spawnCollectionParticles(Vector2 position) {
+    final t = theme;
     add(
       ParticleSystemComponent(
         particle: Particle.generate(
-          count: count,
-          lifespan: 0.8, // Longer lifespan
+          count: t.collectionParticleCount,
+          lifespan: 0.8,
           generator: (i) => AcceleratedParticle(
             acceleration: Vector2(0, 300),
             speed:
-                Vector2.random(Random()) * 400 -
-                Vector2(200, 200), // Faster explosion
+                Vector2.random(Random()) * 400 - Vector2(200, 200),
+            position: position.clone(),
+            child: t.collectionParticleShape == ParticleShape.square
+                ? RectParticle(
+                    rectSize: Vector2.all(t.collectionParticleSize),
+                    paint: Paint()..color = t.collectionParticleColor,
+                  ) as Particle
+                : CircleParticle(
+                    radius: t.collectionParticleSize,
+                    paint: Paint()..color = t.collectionParticleColor,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _spawnCollisionParticles(Vector2 position) {
+    final t = theme;
+    add(
+      ParticleSystemComponent(
+        particle: Particle.generate(
+          count: t.collisionParticleCount,
+          lifespan: 0.8,
+          generator: (i) => AcceleratedParticle(
+            acceleration: t.collisionHasGravity
+                ? Vector2(0, 500)
+                : Vector2(0, 300),
+            speed:
+                Vector2.random(Random()) * 400 - Vector2(200, 200),
             position: position.clone(),
             child: CircleParticle(
-              radius: 3, // Larger particles
-              paint: Paint()..color = color,
+              radius: t.collisionParticleSize,
+              paint: Paint()..color = t.collisionParticleColor,
             ),
           ),
         ),
@@ -267,6 +333,14 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void resetGame() {
+    // Refresh theme on all components in case it changed
+    refreshTheme();
+
+    // Clear shake
+    shakeOffsetX = 0;
+    shakeOffsetY = 0;
+    _shakeTimeRemaining = 0;
+
     gameState.reset();
     gameState.startGame();
     leftCar.reset();
@@ -274,14 +348,12 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
     leftCarComponent.updateLane();
     rightCarComponent.updateLane();
 
-    // Set initial speed based on difficulty
     _currentSpeed = gameState.currentDifficulty.initialSpeed;
 
-    // Remove all objects
     children.whereType<FallingObjectComponent>().forEach(remove);
+    children.whereType<ScorePopup>().forEach(remove);
 
     _timeSinceLastSpawn = 0;
-    // For fixed spacing modes, add random offset to create misalignment
     if (gameState.currentDifficulty.useFixedSpacing) {
       final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
       _distanceLeft = _random.nextDouble() * maxOffset;
@@ -294,22 +366,27 @@ class TwoCarsGame extends FlameGame with TapCallbacks, HasCollisionDetection {
   }
 
   void clearGame() {
-    // Reset cars position
+    // Refresh theme on all components in case it changed
+    refreshTheme();
+
+    // Clear shake
+    shakeOffsetX = 0;
+    shakeOffsetY = 0;
+    _shakeTimeRemaining = 0;
+
     leftCar.reset();
     rightCar.reset();
     leftCarComponent.updateLane();
     rightCarComponent.updateLane();
 
-    // Set initial speed based on difficulty
     _currentSpeed = gameState.currentDifficulty.initialSpeed;
 
-    // Remove all objects
     children.whereType<FallingObjectComponent>().forEach(remove);
     children.whereType<ParticleSystemComponent>().forEach(remove);
+    children.whereType<ScorePopup>().forEach(remove);
 
     _timeSinceLastSpawn = 0;
 
-    // For fixed spacing modes, add random offset to create misalignment
     if (gameState.currentDifficulty.useFixedSpacing) {
       final maxOffset = gameState.currentDifficulty.spawnDistance * 0.5;
       _distanceLeft = _random.nextDouble() * maxOffset;

@@ -33,9 +33,9 @@ class SpeedLines extends PositionComponent {
     }
 
     // Spawn new lines based on intensity
-    final spawnRate = (intensity * 8).round(); // up to 8 lines per frame
+    final spawnRate = (intensity * 2).round(); // up to 2 lines per frame
     for (int i = 0; i < spawnRate; i++) {
-      if (_random.nextDouble() < 0.4) {
+      if (_random.nextDouble() < 0.2) {
         _lines.add(_SpeedLine(
           x: _randomEdgeX(),
           y: _random.nextDouble() * size.y * 0.3,
